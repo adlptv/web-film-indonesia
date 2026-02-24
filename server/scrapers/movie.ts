@@ -9,23 +9,23 @@ export const moviesScrape = async (req: Request, res: AxiosResponse) => {
     const $: cheerio.CheerioAPI = cheerio.load(res.data);
 
     const payload: IMovie[] = [];
-    const items = $("#results article, .gallery-grid article, .grid-archive article, ul.sliders > a");
+    const items = $("#results article, .gallery-grid article, .grid-archive article, ul.sliders > a, .grid-archive > a, #archive-content article");
 
     items.each((index, element) => {
       const $el = $(element);
       const isAnchor = $el.is("a");
 
       const obj = {} as IMovie;
-      const href = isAnchor ? $el.attr("href") : $el.find("a").first().attr("href");
+      const $a = isAnchor ? $el : $el.find("a").first();
+      const href = $a.attr("href");
       if (!href) return;
 
       const cleanHref = href.replace(/\/$/, "");
       obj["_id"] = cleanHref.split("/").pop() || "";
       obj["type"] = "movie";
 
-      obj["title"] = isAnchor
-        ? $el.find("h3").text().trim()
-        : $el.find("h3, .poster-title").first().text().trim();
+      // Try to find title in various places
+      obj["title"] = $el.find("h3, .poster-title, figcaption h3").first().text().trim() || $el.find("img").attr("alt") || "";
 
       obj["poster"] = $el.find("img").attr("src") || $el.find("img").attr("data-src");
 
