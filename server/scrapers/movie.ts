@@ -9,18 +9,28 @@ export const moviesScrape = async (req: Request, res: AxiosResponse) => {
     const $: cheerio.CheerioAPI = cheerio.load(res.data);
 
     const payload: IMovie[] = [];
-    const items = $("#results article, .gallery-grid article, .grid-archive article");
+    const items = $("#results article, .gallery-grid article, .grid-archive article, ul.sliders > a");
 
     items.each((index, element) => {
-      const obj = {} as IMovie;
-      const href = $(element).find("a").attr("href") || "";
-      const cleanHref = href.replace(/\/$/, "");
+      const $el = $(element);
+      const isAnchor = $el.is("a");
 
+      const obj = {} as IMovie;
+      const href = isAnchor ? $el.attr("href") : $el.find("a").first().attr("href");
+      if (!href) return;
+
+      const cleanHref = href.replace(/\/$/, "");
       obj["_id"] = cleanHref.split("/").pop() || "";
       obj["type"] = "movie";
-      obj["title"] = $(element).find("h3, .poster-title").first().text().trim();
-      obj["poster"] = $(element).find("img").attr("src") || $(element).find("img").attr("data-src");
-      obj["year"] = parseInt($(element).find(".year").text().trim()) || 0;
+
+      obj["title"] = isAnchor
+        ? $el.find("h3").text().trim()
+        : $el.find("h3, .poster-title").first().text().trim();
+
+      obj["poster"] = $el.find("img").attr("src") || $el.find("img").attr("data-src");
+
+      const yearText = $el.find(".year").text().trim();
+      obj["year"] = parseInt(yearText) || 0;
 
       if (obj._id && obj.title) {
         payload.push(obj);
@@ -74,11 +84,17 @@ export const movieStreamScrape = async (req: Request, res: AxiosResponse) => {
     const $: cheerio.CheerioAPI = cheerio.load(res.data);
     const streams: IStream[] = [];
 
-    $("#player-list a").each((i, el) => {
-      streams.push({
-        provider: $(el).text().trim() || "",
-        link: $(el).attr("href") || "",
-      });
+    $("#player-list a, .player-list a, .ganti-player a").each((i, el) => {
+      const $el = $(el);
+      const link = $el.attr("href") || $el.attr("data-url");
+      const provider = $el.text().trim() || $el.attr("data-server") || `Server ${i + 1}`;
+
+      if (link && link !== "#") {
+        streams.push({
+          provider: provider,
+          link: link,
+        });
+      }
     });
 
     return streams;
