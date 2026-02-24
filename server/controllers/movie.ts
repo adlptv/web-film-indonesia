@@ -12,7 +12,7 @@ type TController = (
   next: NextFunction,
 ) => Promise<void>;
 
-const getBaseUrl = () => process.env.LK21_BASE_URL || "https://tv8.lk21official.cc";
+const getBaseUrl = () => (process.env.LK21_BASE_URL || "https://tv8.lk21official.cc").replace(/\/$/, "");
 
 const createMovieController = (
   endpoint: string,
@@ -51,17 +51,27 @@ const tryMirrors = async (req: Request, id: string, scraper: any) => {
 
   for (const baseUrl of mirrors) {
     try {
-      console.log(`[Fetch] Trying ${baseUrl}/${id}`);
-      const AxiosResponse = await api.get(`${baseUrl}/${id}`, {
-        timeout: 8000,
-        headers: { "Referer": baseUrl + "/" }
+      const targetUrl = `${baseUrl}/${id}`;
+      console.log(`[Fetch] Trying mirror: ${targetUrl}`);
+      const AxiosResponse = await api.get(targetUrl, {
+        timeout: 10000,
+        headers: {
+          "Referer": baseUrl + "/",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        }
       });
+
+      console.log(`[Fetch] Mirror ${baseUrl} status: ${AxiosResponse.status}`);
       const data = await scraper(req, AxiosResponse);
-      if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+
+      if (data && (Array.isArray(data) ? data.length > 0 : (data.title || data.length > 0))) {
+        console.log(`[Fetch] Success! Data found on ${baseUrl}`);
         return data;
+      } else {
+        console.warn(`[Fetch] Mirror ${baseUrl} returned empty data for ${id}`);
       }
     } catch (err: any) {
-      console.warn(`[Fetch] Mirror ${baseUrl} failed for ${id}`);
+      console.warn(`[Fetch] Mirror ${baseUrl} error: ${err.message}`);
     }
   }
   return null;
@@ -128,7 +138,7 @@ export const searchMovie: TController = async (req, res, next) => {
 
     let payload: any[] = [];
 
-    // strategy 1: JSON API
+    /* strategy 1: JSON API (Disabled due to slug mismatch issues)
     try {
       console.log(`[Search] Trying JSON API...`);
       const jsonResponse = await api.get(`https://gudangvape.com/index.php?s=${encodeURIComponent(query)}`, {
@@ -148,9 +158,9 @@ export const searchMovie: TController = async (req, res, next) => {
       }
     } catch (err) {
       console.warn(`[Search] JSON API failed`);
-    }
+    } */
 
-    // strategy 2: HTML Scraping
+    // strategy 2: HTML Scraping (Prioritize this for 100% ID compatibility)
     if (payload.length === 0) {
       for (const baseUrl of mirrors) {
         try {

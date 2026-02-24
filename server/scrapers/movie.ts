@@ -45,22 +45,24 @@ export const movieDetailScrape = async (req: Request, res: AxiosResponse) => {
 
     const similarMovies: IMovie[] = [];
 
-    obj["title"] = $(".movie-info h1").text().trim();
-    obj["director"] = $(".detail p").eq(1).find("a").text().trim();
+    obj["title"] = $(".movie-info h1, .content-left h1, h1").first().text().trim();
+    obj["director"] = $(".detail p").eq(0).find("a").text().trim();
     obj["cast"] = $(".detail p")
-      .eq(2)
+      .eq(1)
       .find("a")
       .map((i, el) => $(el).text().trim())
       .get();
     obj["description"] = cleanText($("div.synopsis").html()?.trim());
-    obj["duration"] = $(".info-tag span").last().text().trim();
-    $(".video-list a").each((i, el) => {
+    obj["duration"] = $(".info-tag span").eq(3).text().trim() || $(".info-tag span").last().text().trim();
+    $(".related-content figure, .video-list a").each((i, el) => {
       const movieObj = {} as IMovie;
+      const $el = $(el);
+      const $a = $el.is("a") ? $el : $el.find("a").first();
 
-      movieObj["_id"] = $(el).attr("href")?.split("/").pop() || "";
+      movieObj["_id"] = $a.attr("href")?.replace(/\/$/, "").split("/").pop() || "";
       movieObj["type"] = "movie";
-      movieObj["title"] = $(el).find(".video-title").text().trim();
-      movieObj["poster"] = $(el).find("img").attr("src");
+      movieObj["title"] = $el.find(".video-title, h3").text().trim() || $el.find("img").attr("alt") || "";
+      movieObj["poster"] = $el.find("img").attr("src") || $el.find("img").attr("data-src");
 
       similarMovies.push(movieObj);
     });
