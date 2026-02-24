@@ -12,6 +12,8 @@ type TController = (
   next: NextFunction,
 ) => Promise<void>;
 
+const getBaseUrl = () => process.env.LK21_BASE_URL || "https://tv8.lk21official.cc";
+
 const createMovieController = (
   endpoint: string,
   message: string,
@@ -19,9 +21,11 @@ const createMovieController = (
   return async (req, res, next) => {
     try {
       const { page = 1 } = req.query;
+      const baseUrl = getBaseUrl();
 
       const AxiosResponse = await api.get(
-        `${process.env.LK21_BASE_URL}/${endpoint}/page/${Number(page)}`,
+        `${baseUrl}/${endpoint}/page/${Number(page)}`,
+        { headers: { "Referer": baseUrl + "/" } }
       );
 
       const payload = await moviesScrape(req, AxiosResponse);
@@ -29,61 +33,81 @@ const createMovieController = (
       res.status(200).json({ message: message, data: payload });
     } catch (error) {
       console.error(error);
+      res.status(500).json({ data: [] });
     }
   };
 };
 
 export const latestMovie = createMovieController("latest", "Latest Movies");
-
 export const ratingMovies = createMovieController("rating", "Best Rating");
-
 export const populerMovies = createMovieController("populer", "Populer");
+
+const tryMirrors = async (req: Request, id: string, scraper: any) => {
+  const mirrors = [
+    process.env.LK21_BASE_URL || "https://tv8.lk21official.cc",
+    "https://tv7.lk21official.cc",
+    "https://tv2.lk21official.cc"
+  ];
+
+  for (const baseUrl of mirrors) {
+    try {
+      console.log(`[Fetch] Trying ${baseUrl}/${id}`);
+      const AxiosResponse = await api.get(`${baseUrl}/${id}`, {
+        timeout: 8000,
+        headers: { "Referer": baseUrl + "/" }
+      });
+      const data = await scraper(req, AxiosResponse);
+      if (data && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
+        return data;
+      }
+    } catch (err: any) {
+      console.warn(`[Fetch] Mirror ${baseUrl} failed for ${id}`);
+    }
+  }
+  return null;
+};
 
 export const detailMovie: TController = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    const AxiosResponse = await api.get(`${process.env.LK21_BASE_URL}/${id}`);
-
-    const movie = await movieDetailScrape(req, AxiosResponse);
-
+    const movie = await tryMirrors(req, id, movieDetailScrape);
     res.status(200).json({ message: "Movie Details", data: movie });
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error: "Failed to fetch details" });
   }
 };
 
 export const streamMovie: TController = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    const AxiosResponse = await api.get(`${process.env.LK21_BASE_URL}/${id}`);
-
-    const movie = await movieStreamScrape(req, AxiosResponse);
-
-    res.status(200).json({ message: "Movie Details", data: movie });
+    const streams = await tryMirrors(req, id, movieStreamScrape);
+    res.status(200).json({ message: "Movie Streams", data: streams });
   } catch (error) {
-    console.log(error);
+    res.status(500).json({ error: "Failed to fetch stream" });
   }
 };
 
 const createCategoriesController = (endpoint: string): TController => {
   return async (req, res, next) => {
-    const { param } = req.params;
-    const { page = 1 } = req.query;
+    try {
+      const { param } = req.params;
+      const { page = 1 } = req.query;
+      const baseUrl = getBaseUrl();
 
-    const AxiosResponse = await api.get(
-      `${process.env.LK21_BASE_URL}/${endpoint}/${param}/page/${Number(page)}`,
-    );
+      const AxiosResponse = await api.get(
+        `${baseUrl}/${endpoint}/${param}/page/${Number(page)}`,
+        { headers: { "Referer": baseUrl + "/" } }
+      );
 
-    const payload = await moviesScrape(req, AxiosResponse);
-
-    res.status(200).json({ data: payload });
+      const payload = await moviesScrape(req, AxiosResponse);
+      res.status(200).json({ data: payload });
+    } catch (error) {
+      res.status(500).json({ data: [] });
+    }
   };
 };
 
 export const genreMovie = createCategoriesController("genre");
-
 export const countryMovie = createCategoriesController("country");
 
 export const searchMovie: TController = async (req, res, next) => {
@@ -96,17 +120,15 @@ export const searchMovie: TController = async (req, res, next) => {
       return;
     }
 
-    // List of mirrors to try
     const mirrors = [
       process.env.LK21_BASE_URL || "https://tv8.lk21official.cc",
       "https://tv7.lk21official.cc",
-      "https://tv2.lk21official.cc",
-      "https://tv1.lk21official.cc"
+      "https://tv2.lk21official.cc"
     ];
 
     let payload: any[] = [];
 
-    // strategy 1: JSON API (Often more reliable and faster)
+    // strategy 1: JSON API
     try {
       console.log(`[Search] Trying JSON API...`);
       const jsonResponse = await api.get(`https://gudangvape.com/index.php?s=${encodeURIComponent(query)}`, {
@@ -125,34 +147,24 @@ export const searchMovie: TController = async (req, res, next) => {
         console.log(`[Search] JSON API Success found ${payload.length} items`);
       }
     } catch (err) {
-      console.warn(`[Search] JSON API failed, falling back to HTML scraping...`);
+      console.warn(`[Search] JSON API failed`);
     }
 
-    // strategy 2: HTML Scraping Mirror Fallbacks
+    // strategy 2: HTML Scraping
     if (payload.length === 0) {
       for (const baseUrl of mirrors) {
         try {
           const searchUrl = `${baseUrl}/search?s=${encodeURIComponent(query)}&page=${Number(page)}`;
-          console.log(`[Search] Trying HTML mirror: ${searchUrl}`);
-
           const AxiosResponse = await api.get(searchUrl, {
             timeout: 8000,
-            headers: {
-              "Referer": `${baseUrl}/`
-            }
+            headers: { "Referer": baseUrl + "/" }
           });
-
-          console.log(`[Search] Mirror status: ${AxiosResponse.status}`);
-
           const results = await moviesScrape(req, AxiosResponse);
           if (results && results.length > 0) {
             payload = results;
-            console.log(`[Search] Success! Found ${payload.length} items on ${baseUrl}`);
             break;
           }
-        } catch (err: any) {
-          console.warn(`[Search] Mirror ${baseUrl} failing...`);
-        }
+        } catch (err: any) { }
       }
     }
 
