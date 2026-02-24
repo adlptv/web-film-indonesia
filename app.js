@@ -251,24 +251,40 @@ async function showDetail(id, type) {
     showView('detail');
     setActiveNav('');
     detailSection.style.display = 'block';
+
     showLoading();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    try {
-        const apiType = (type === 'series') ? 'series' : 'movies';
-        const data = await fetchAPI(`/${apiType}/${id}`);
+    // API uses /movies/:id or /series/:id
+    const apiType = type === 'series' ? 'series' : 'movies';
+    const data = await fetchAPI(`/${apiType}/${id}`);
 
-        if (data && data.title) {
-            renderDetail(data, id, type);
+    if (data && data.title) {
+        renderDetail(data, id, type);
+    } else {
+        // Find from demo data
+        const allDemo = [...DEMO_MOVIES, ...DEMO_SERIES, ...DEMO_POPULAR];
+        const found = allDemo.find(item => item._id === id);
+        if (found) {
+            renderDetail({
+                ...found,
+                description: `${found.title} adalah film/series dengan rating ${found.rating || 'N/A'} yang dirilis pada tahun ${found.year || 'N/A'}. Nonton sekarang di Sarafilm dengan subtitle Indonesia!`,
+                director: 'N/A',
+                cast: [],
+                duration: '120 min',
+            }, id, type);
         } else {
-            showEmpty('Detail Tidak Tersedia', 'Konten ini belum tersedia atau sedang dalam perbaikan. Silakan coba film lain.');
+            document.getElementById('detailContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">😞</div>
+                    <h3 class="empty-title">Detail Tidak Tersedia</h3>
+                    <p class="empty-text">Konten ini belum tersedia. Silakan coba film lain.</p>
+                    <button class="btn btn-primary" onclick="goHome()" style="margin-top: 16px;">Kembali ke Home</button>
+                </div>
+            `;
         }
-    } catch (err) {
-        console.error('ShowDetail failed:', err);
-        showEmpty('Gagal Memuat Detail', 'Terjadi kesalahan saat mengambil informasi. Harap periksa koneksi internet Anda.');
-    } finally {
-        hideLoading();
     }
+    hideLoading();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ===== Load Stream =====
