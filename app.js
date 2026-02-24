@@ -1,5 +1,7 @@
 // ===== Configuration =====
-const API_BASE = 'http://localhost:3000'; // lk21-scrape API base URL
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000'
+    : '/api';
 
 // ===== Fallback Demo Data =====
 const DEMO_MOVIES = [
