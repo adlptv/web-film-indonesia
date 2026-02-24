@@ -1,0 +1,10 @@
+﻿C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\app.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\index.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\types.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\controllers\movie.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\controllers\series.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\routes\routes.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\scrapers\movie.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\scrapers\series.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\util\axios-instance.ts
+C:\Users\MyBook Hype AMD\Downloads\web film indonesia\server\util\clean-text.ts
