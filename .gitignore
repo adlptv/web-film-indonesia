@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+.DS_Store
+*.log
+api/node_modules/
+api/dist/
+api/.env
+api2/node_modules/
+api2/dist/
+api2/.env
