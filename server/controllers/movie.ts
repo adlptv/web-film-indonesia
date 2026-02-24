@@ -46,7 +46,10 @@ const tryMirrors = async (req: Request, id: string, scraper: any) => {
   const mirrors = [
     getBaseUrl(),
     "https://tv7.lk21official.cc",
-    "https://tv2.lk21official.cc"
+    "https://tv2.lk21official.cc",
+    "https://tv1.lk21official.cc",
+    "https://tv10.lk21official.cc",
+    "https://149.202.164.210"
   ];
 
   for (const baseUrl of mirrors) {
@@ -127,7 +130,10 @@ export const searchMovie: TController = async (req, res, next) => {
     const mirrors = [
       getBaseUrl(),
       "https://tv7.lk21official.cc",
-      "https://tv2.lk21official.cc"
+      "https://tv2.lk21official.cc",
+      "https://tv1.lk21official.cc",
+      "https://tv10.lk21official.cc",
+      "https://149.202.164.210"
     ];
 
     let payload: any[] = [];
