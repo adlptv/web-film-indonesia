@@ -13,13 +13,12 @@
         "baseUrl": ".",
         "paths": {
             "@/*": [
-                "server/*"
+                "api/_lib/*"
             ]
         }
     },
     "include": [
-        "api/**/*.ts",
-        "server/**/*.ts"
+        "api/**/*.ts"
     ],
     "exclude": [
         "node_modules",
