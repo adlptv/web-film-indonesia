@@ -6,7 +6,7 @@ import { Request } from "express";
 
 export const moviesScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const payload: IMovie[] = [];
     const items = $("#results article, .gallery-grid article, .grid-archive article");
@@ -39,7 +39,7 @@ export const moviesScrape = async (req: Request, res: AxiosResponse) => {
 
 export const movieDetailScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const obj = {} as IMovieDetail;
 
@@ -74,7 +74,7 @@ export const movieDetailScrape = async (req: Request, res: AxiosResponse) => {
 
 export const movieStreamScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const streams: IStream[] = [];
 

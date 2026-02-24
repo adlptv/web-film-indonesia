@@ -6,7 +6,7 @@ import { cleanText } from "../util/clean-text";
 
 export const seriesScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const payload: ISeries[] = [];
     const items = $("#results article, .gallery-grid article, .grid-archive article");
@@ -38,7 +38,7 @@ export const seriesScrape = async (req: Request, res: AxiosResponse) => {
 
 export const detailSeriesScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const obj = {} as ISeriesDetail;
     let episodesList: IEpisode[] = [];
@@ -74,7 +74,7 @@ export const detailSeriesScrape = async (req: Request, res: AxiosResponse) => {
 
 export const seriesStreamScrape = async (req: Request, res: AxiosResponse) => {
   try {
-    const $: cheerio.CheerioAPI = cheerio.load(res.data);
+    const $: any = cheerio.load(res.data);
 
     const streams: IStream[] = [];
 
